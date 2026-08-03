@@ -1,25 +1,52 @@
-name: Prepare Realistic Knight Assets
+name: Build Realistic Death Knight Screen
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  prepare:
+  build:
+    if: ${{ !contains(github.event.head_commit.message, '[skip realistic build]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: death-knight-screen
           fetch-depth: 0
-      - name: Download CC0 realistic knight sprites
-        run: |
-          curl -L --retry 3 --fail "https://opengameart.org/sites/default/files/Knight%202D.zip" -o /tmp/Knight-2D-CC0.zip
-          unzip -l /tmp/Knight-2D-CC0.zip > /tmp/knight-files.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-python@v5
         with:
-          name: realistic-knight-assets
-          path: |
-            /tmp/Knight-2D-CC0.zip
-            /tmp/knight-files.txt
+          python-version: '3.12'
+      - name: Generate realistic cinematic animation
+        run: |
+          python -m pip install --disable-pip-version-check pillow
+          python tools/generate_realistic_sheet.py
+          test -s src/main/resources/assets/deathknightscreen/textures/gui/death_knight_realistic.png
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Compile Forge 1.20.1 mod
+        run: gradle clean build --stacktrace
+      - name: Verify compiled JAR
+        run: |
+          test -s build/libs/deathknightscreen-1.2.0.jar
+          unzip -t build/libs/deathknightscreen-1.2.0.jar
+          unzip -l build/libs/deathknightscreen-1.2.0.jar | grep death_knight_realistic.png
+      - name: Publish compiled JAR to main
+        run: |
+          cp build/libs/deathknightscreen-1.2.0.jar /tmp/DeathKnightScreen-Realistic-Forge-1.20.1-1.2.0.jar
+          git checkout main
+          mkdir -p dist
+          cp /tmp/DeathKnightScreen-Realistic-Forge-1.20.1-1.2.0.jar dist/DeathKnightScreen-Realistic-Forge-1.20.1-1.2.0.jar
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- dist/DeathKnightScreen-Realistic-Forge-1.20.1-1.2.0.jar
+          git commit -m "Add realistic Death Knight mod 1.2.0 [skip realistic build]"
+          git push origin main
