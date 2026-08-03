@@ -1,1 +1,1 @@
-Build trigger for the Forge 1.20.1 death-screen mod.
+Build trigger for the verified realistic Forge 1.20.1 death-screen mod version 1.2.0.
