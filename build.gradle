@@ -35,7 +35,25 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 }
 
+def referenceJar = layout.buildDirectory.file('reference/klleyys-hearts-reference.jar')
+
+tasks.register('downloadReferenceAssets') {
+    outputs.file(referenceJar)
+    doLast {
+        def target = referenceJar.get().asFile
+        target.parentFile.mkdirs()
+        new URL('https://edge.forgecdn.net/files/6915/133/klleyys_hearts-2.0.2%20HOTFIX-forge-1.20.1.jar').withInputStream { input ->
+            target.withOutputStream { output -> output << input }
+        }
+    }
+}
+
 tasks.named('processResources', ProcessResources).configure {
+    dependsOn tasks.named('downloadReferenceAssets')
+    from(referenceJar) {
+        into 'reference'
+        rename { 'klleyys-hearts-reference.jar' }
+    }
     var replaceProperties = [
             minecraft_version: minecraft_version,
             forge_version: forge_version,
