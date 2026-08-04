@@ -1,0 +1,15 @@
+name: DeathKnightScreen
+version: 1.1.0
+main: de.tim30531.deathscreen.DeathKnightPaperPlugin
+api-version: '1.21.11'
+author: tim30531
+description: Spielt beim Tod eine animierte Ritter-und-Herz-Sequenz über ein Server-Resourcepack ab.
+commands:
+  deathscreen:
+    description: Verwaltung und Test der Todesanimation
+    usage: /deathscreen <test|pack|reload>
+    permission: deathscreen.admin
+permissions:
+  deathscreen.admin:
+    description: Erlaubt Verwaltung und Test der Todesanimation
+    default: op

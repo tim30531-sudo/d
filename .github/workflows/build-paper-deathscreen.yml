@@ -1,0 +1,33 @@
+name: Build Paper 1.21.11 Death Screen
+
+on:
+  push:
+    branches: [ paper-deathscreen-1-21-11 ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Compile Paper 1.21.11 plugin
+        working-directory: paper-deathscreen
+        run: gradle clean build --stacktrace
+      - name: Verify plugin JAR
+        run: |
+          test -s paper-deathscreen/build/libs/DeathKnightScreen-Paper-1.21.11-1.1.0.jar
+          unzip -t paper-deathscreen/build/libs/DeathKnightScreen-Paper-1.21.11-1.1.0.jar
+          unzip -l paper-deathscreen/build/libs/DeathKnightScreen-Paper-1.21.11-1.1.0.jar | grep plugin.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeathKnightScreen-Paper-1.21.11-1.1.0-base
+          path: paper-deathscreen/build/libs/DeathKnightScreen-Paper-1.21.11-1.1.0.jar
