@@ -1,0 +1,94 @@
+name: Build Forge 1.21.11 Ultimate Death Screen
+
+on:
+  push:
+    branches: [ deathscreen-forge-1-21-11-smooth ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare Forge 1.21.11 MDK
+        run: |
+          curl -L --fail --retry 3 \
+            https://maven.minecraftforge.net/net/minecraftforge/forge/1.21.11-61.1.14/forge-1.21.11-61.1.14-mdk.zip \
+            -o /tmp/forge-mdk.zip
+          mkdir -p /tmp/deathscreen-mdk
+          unzip -q /tmp/forge-mdk.zip -d /tmp/deathscreen-mdk
+          rm -rf /tmp/deathscreen-mdk/src/main/java/com
+          rm -f /tmp/deathscreen-mdk/src/main/resources/META-INF/mods.toml
+          cp forge-deathscreen-1.21.11/gradle.properties /tmp/deathscreen-mdk/gradle.properties
+          cp -R forge-deathscreen-1.21.11/src/main/java/* /tmp/deathscreen-mdk/src/main/java/
+          mkdir -p /tmp/deathscreen-mdk/src/main/resources
+          cp -R forge-deathscreen-1.21.11/src/main/resources/* /tmp/deathscreen-mdk/src/main/resources/
+
+      - name: Generate and validate 120 cinematic frames
+        run: |
+          python -m pip install --disable-pip-version-check pillow
+          FRAME_DIR=/tmp/deathscreen-mdk/src/main/resources/assets/deathknightscreen/textures/gui/frames
+          python forge-deathscreen-1.21.11/tools/generate_frames.py "$FRAME_DIR"
+          test "$(find "$FRAME_DIR" -name 'frame_*.png' | wc -l)" -eq 120
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          frame_dir = Path('/tmp/deathscreen-mdk/src/main/resources/assets/deathknightscreen/textures/gui/frames')
+          frames = sorted(frame_dir.glob('frame_*.png'))
+          assert len(frames) == 120
+          for index, frame in enumerate(frames):
+              assert frame.name == f'frame_{index:03d}.png'
+              with Image.open(frame) as image:
+                  image.verify()
+              with Image.open(frame) as image:
+                  assert image.size == (640, 360), (frame, image.size)
+          print('Validated 120 readable 640x360 PNG frames')
+          PY
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile Forge mod
+        working-directory: /tmp/deathscreen-mdk
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+
+      - name: Verify compiled JAR
+        run: |
+          JAR="$(find /tmp/deathscreen-mdk/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          echo "Gefundene Forge-JAR: $JAR"
+          test -n "$JAR"
+          test -s "$JAR"
+          unzip -t "$JAR"
+          FRAME_COUNT="$(unzip -Z1 "$JAR" | grep -E -c '^assets/deathknightscreen/textures/gui/frames/frame_[0-9]{3}\.png$')"
+          echo "Enthaltene Animationsframes: $FRAME_COUNT"
+          test "$FRAME_COUNT" -eq 120
+          unzip -Z1 "$JAR" | grep -q '^META-INF/mods.toml$'
+          ! unzip -p "$JAR" META-INF/mods.toml | grep -q '\${'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'modId="deathknightscreen"'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'version="2.0.0"'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'loaderVersion="\[61,)"'
+          unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/DeathKnightScreenMod.class$'
+          unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/ModNetwork.class$'
+          unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/client/ClientHooks.class$'
+          unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/client/SmoothDeathAnimationScreen.class$'
+          mkdir -p dist
+          cp "$JAR" dist/DeathKnightScreen-Ultimate-Forge-1.21.11-2.0.0-PlayerKillsOnly.jar
+          sha256sum dist/DeathKnightScreen-Ultimate-Forge-1.21.11-2.0.0-PlayerKillsOnly.jar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeathKnightScreen-Ultimate-Forge-1.21.11-2.0.0-PlayerKillsOnly
+          path: dist/DeathKnightScreen-Ultimate-Forge-1.21.11-2.0.0-PlayerKillsOnly.jar

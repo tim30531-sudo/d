@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[61,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="deathknightscreen"
+version="2.0.0"
+displayName="Death Knight Screen Ultimate"
+authors="tim30531"
+description='''Cinematic 120-frame player-kill death animation with preloaded textures, synchronized sound cues and reliable server-to-client triggering.'''
+displayTest="MATCH_VERSION"
+
+[[dependencies.deathknightscreen]]
+modId="forge"
+mandatory=true
+versionRange="[61.1.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.deathknightscreen]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.11,1.22)"
+ordering="NONE"
+side="BOTH"
