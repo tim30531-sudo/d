@@ -2,7 +2,6 @@ package de.tim30531.deathknightscreen;
 
 import de.tim30531.deathknightscreen.client.ClientHooks;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -32,8 +31,7 @@ public final class DeathKnightScreenMod {
             return;
         }
 
-        var killer = victim.getKillCredit();
-        if (killer instanceof Player && killer != victim) {
+        if (victim.getKillCredit() instanceof ServerPlayer killer && killer != victim) {
             ModNetwork.sendAnimation(victim);
         }
     }
