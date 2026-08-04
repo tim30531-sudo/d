@@ -1,0 +1,46 @@
+name: Build Minecraft Helden Paper Port
+on:
+  push:
+    branches: [ minecrafthelden-paper-port ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore port source
+        run: python minecrafthelden-paper/tools/write_source.py
+      - name: Build original heart resource pack
+        run: |
+          python -m pip install --disable-pip-version-check pillow
+          python minecrafthelden-paper/tools/generate_pack.py
+          unzip -t minecrafthelden-paper/build/minecrafthelden-pack.zip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Embed resource pack
+        run: cp minecrafthelden-paper/build/minecrafthelden-pack.zip minecrafthelden-paper/src/main/resources/minecrafthelden-pack.zip
+      - name: Compile Paper 1.21.11 plugin
+        working-directory: minecrafthelden-paper
+        run: gradle clean build --stacktrace
+      - name: Verify
+        run: |
+          test -s minecrafthelden-paper/build/libs/MinecraftHelden-Paper-1.21.11-1.0.0.jar
+          unzip -t minecrafthelden-paper/build/libs/MinecraftHelden-Paper-1.21.11-1.0.0.jar
+          unzip -l minecrafthelden-paper/build/libs/MinecraftHelden-Paper-1.21.11-1.0.0.jar | grep minecrafthelden-pack.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MinecraftHelden-Paper-1.21.11-1.0.0
+          path: |
+            minecrafthelden-paper/build/libs/MinecraftHelden-Paper-1.21.11-1.0.0.jar
+            minecrafthelden-paper/build/minecrafthelden-pack.zip

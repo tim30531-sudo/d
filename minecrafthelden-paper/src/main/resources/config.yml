@@ -1,0 +1,18 @@
+# Originalwert der Forge-Mod
+initial-lives: 3
+
+# Originalwert: 600 Sekunden
+grave-remove-time: 600
+
+# Das Resourcepack wird benötigt, um die originalen cyanfarbenen Herzen anzuzeigen.
+resource-pack:
+  required: true
+  send-delay-ticks: 20
+  url: ""
+
+# Eingebauter kleiner Webserver für das Resourcepack.
+web-server:
+  enabled: true
+  bind-address: "0.0.0.0"
+  port: 8124
+  public-host: "CHANGE_ME"
