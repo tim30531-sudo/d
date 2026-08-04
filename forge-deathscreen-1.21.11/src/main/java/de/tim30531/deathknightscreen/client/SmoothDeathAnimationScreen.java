@@ -35,7 +35,7 @@ public final class SmoothDeathAnimationScreen extends Screen {
     @Override
     public void tick() {
         if (System.nanoTime() - startedAtNanos >= DURATION_NANOS && minecraft != null) {
-            minecraft.gui.setScreen(vanillaDeathScreen);
+            minecraft.setScreen(vanillaDeathScreen);
         }
     }
 
