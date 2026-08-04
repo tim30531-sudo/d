@@ -76,6 +76,10 @@ jobs:
           echo "Enthaltene Animationsframes: $FRAME_COUNT"
           test "$FRAME_COUNT" -eq 120
           unzip -Z1 "$JAR" | grep -q '^META-INF/mods.toml$'
+          ! unzip -p "$JAR" META-INF/mods.toml | grep -q '\${'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'modId="deathknightscreen"'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'version="2.0.0"'
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'loaderVersion="\[61,)"'
           unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/DeathKnightScreenMod.class$'
           unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/ModNetwork.class$'
           unzip -Z1 "$JAR" | grep -q '^de/tim30531/deathknightscreen/client/ClientHooks.class$'
