@@ -3,6 +3,8 @@ name: Build Paper Death Screen
 on:
   push:
     branches: [ paper-deathscreen-1-0 ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
