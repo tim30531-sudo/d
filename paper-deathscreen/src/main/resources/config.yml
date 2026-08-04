@@ -1,0 +1,20 @@
+# Entweder eine fertige öffentliche URL zum Resourcepack eintragen ...
+resource-pack:
+  url: ""
+  required: true
+  send-delay-ticks: 20
+
+# ... oder den eingebauten kleinen Webserver verwenden.
+# public-host muss von den Spielern erreichbar sein, z. B. 203.0.113.10
+# oder minecraft.example.de. Der TCP-Port muss in Router/Firewall freigegeben sein.
+web-server:
+  enabled: true
+  bind-address: "0.0.0.0"
+  port: 8123
+  public-host: "CHANGE_ME"
+
+animation:
+  frame-count: 40
+  frame-ticks: 1
+  start-delay-ticks: 2
+  freeze-player: true
