@@ -1,0 +1,30 @@
+name: MinecraftHelden
+version: 1.0.0
+main: de.tim30531.minecrafthelden.MinecraftHeldenPlugin
+api-version: '1.21.11'
+author: Lxk4z / Paper-Port
+website: https://github.com/tim30531-sudo/d
+description: Paper-Port der Minecraft-Helden-Leben-, Kampf- und Grabfunktionen.
+commands:
+  mylives:
+    description: Leben setzen oder prüfen
+    usage: /mylives <set|check> <Spieler|UUID> [Leben]
+  showCombatTime:
+    description: Anzeige des Kampf-Timers an- oder ausschalten
+    usage: /showCombatTime <true|false>
+  tpgrave:
+    description: Gräber eines Spielers anzeigen oder teleportieren
+    usage: /tpgrave <Spieler> [Index]
+permissions:
+  minecrafthelden.mylives.set:
+    description: Darf Leben setzen
+    default: op
+  minecrafthelden.mylives.check:
+    description: Darf Leben prüfen
+    default: op
+  minecrafthelden.showcombattime:
+    description: Darf die Kampfzeitanzeige umschalten
+    default: true
+  minecrafthelden.tpgrave:
+    description: Darf Grabpositionen anzeigen und sich dorthin teleportieren
+    default: op
