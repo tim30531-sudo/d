@@ -44,8 +44,6 @@ jobs:
           test "$(find /tmp/deathscreen-mdk/src/main/resources/assets/deathknightscreen/textures/gui/frames -name 'frame_*.png' | wc -l)" -eq 80
 
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.14.3'
 
       - name: Compile Forge mod
         working-directory: /tmp/deathscreen-mdk
@@ -55,12 +53,17 @@ jobs:
 
       - name: Verify compiled JAR
         run: |
-          test -s /tmp/deathscreen-mdk/build/libs/deathknightscreen-1.0.0.jar
-          unzip -t /tmp/deathscreen-mdk/build/libs/deathknightscreen-1.0.0.jar
-          test "$(unzip -l /tmp/deathscreen-mdk/build/libs/deathknightscreen-1.0.0.jar | grep -c 'textures/gui/frames/frame_.*png')" -eq 80
+          JAR="$(find /tmp/deathscreen-mdk/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          echo "Gefundene Forge-JAR: $JAR"
+          test -n "$JAR"
+          test -s "$JAR"
+          unzip -t "$JAR"
+          FRAME_COUNT="$(unzip -Z1 "$JAR" | grep -E -c '^assets/deathknightscreen/textures/gui/frames/frame_[0-9]{3}\.png$')"
+          echo "Enthaltene Animationsframes: $FRAME_COUNT"
+          test "$FRAME_COUNT" -eq 80
+          unzip -Z1 "$JAR" | grep -q '^META-INF/mods.toml$'
           mkdir -p dist
-          cp /tmp/deathscreen-mdk/build/libs/deathknightscreen-1.0.0.jar \
-            dist/DeathKnightScreen-Forge-1.21.11-1.0.0-PlayerKillsOnly-Smooth.jar
+          cp "$JAR" dist/DeathKnightScreen-Forge-1.21.11-1.0.0-PlayerKillsOnly-Smooth.jar
 
       - uses: actions/upload-artifact@v4
         with:
