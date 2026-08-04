@@ -1,7 +1,7 @@
 package de.tim30531.deathknightscreen.client;
 
 import de.tim30531.deathknightscreen.DeathKnightScreenMod;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -50,7 +50,7 @@ public final class SmoothDeathAnimationScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, 0xFF000000);
 
         long elapsed = Math.max(0L, System.nanoTime() - startedAtNanos);
