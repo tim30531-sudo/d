@@ -14,7 +14,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.SimpleChannel;
 
 public final class ModNetwork {
-    private static final int PROTOCOL_VERSION = 1;
+    private static final int PROTOCOL_VERSION = 2;
     private static final Identifier CHANNEL_NAME = Identifier.fromNamespaceAndPath(
             DeathKnightScreenMod.MODID, "main_channel");
 
@@ -57,7 +57,7 @@ public final class ModNetwork {
 
         private static void onMessage(TriggerAnimationPacket message, CustomPayloadEvent.Context context) {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-                ClientHooks.armAnimation();
+                ClientHooks.triggerAnimation();
             }
         }
     }
