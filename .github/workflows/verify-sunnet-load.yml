@@ -16,13 +16,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Recreate and build mod
+      - name: Recreate and build exact mod
         run: |
           cat sunnet-build-263/setup.part0.b64 sunnet-build-263/setup.part1a.b64 sunnet-build-263/setup.part1b0.b64 sunnet-build-263/setup.part1b1.b64 sunnet-build-263/setup.part1b2.b64 sunnet-build-263/setup.part1c.b64 | base64 -d | gunzip > setup_sunnet.py
           python3 -c 'from pathlib import Path; p=Path("setup_sunnet.py"); s=p.read_text(); i=s.find(r"\nimport struct"); p.write_text(s[:i] + s[i:].replace(r"\n", chr(10)))'
           python3 setup_sunnet.py
           cd generated/mod
           gradle --no-daemon build
+          echo 'e7b6256719fa114831092fb5599b31e3e974879d4deb30305b2dfb139788da2d  build/libs/SunnetMod-26.3.jar' | sha256sum -c -
       - name: Prepare Fabric 1.21.1 test server
         run: |
           mkdir -p verify-server/mods
@@ -32,22 +33,29 @@ jobs:
           curl -fL 'https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.116.3+1.21.1/fabric-api-0.116.3+1.21.1.jar' -o mods/fabric-api-0.116.3+1.21.1.jar
           curl -fL 'https://cdn.modrinth.com/data/8BmcQJ2H/versions/5jcq814u/geckolib-fabric-1.21.1-4.6.5.jar' -o mods/geckolib-fabric-1.21.1-4.6.5.jar
           printf 'eula=true\n' > eula.txt
-      - name: Start Fabric server and verify Sunnet
+          printf 'server-port=25566\nonline-mode=false\n' > server.properties
+      - name: Start server and verify exact jar loads
         run: |
           cd verify-server
-          set +e
-          timeout 120s java -Xms512M -Xmx1536M -jar fabric-server.jar nogui > server.log 2>&1
-          code=$?
-          set -e
+          java -Xms512M -Xmx1536M -jar fabric-server.jar nogui > server.log 2>&1 &
+          pid=$!
+          ok=0
+          for i in $(seq 1 75); do
+            if grep -q 'Done (' server.log 2>/dev/null; then ok=1; break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          kill "$pid" 2>/dev/null || true
+          wait "$pid" 2>/dev/null || true
           cat server.log
-          grep -F 'Loading Minecraft 1.21.1 with Fabric Loader' server.log
-          grep -E 'sunnet[[:space:]]+26\.3|Sunnet Mod|Sunnet' server.log
-          grep -E 'Done \([0-9.]+s\)!|Done \(' server.log
-          if grep -E 'Could not execute entrypoint|EntrypointException|NoClassDefFoundError|NoSuchMethodError|Mixin apply failed|Failed to load|Exception in server tick loop' server.log; then
-            echo 'Fatal mod/server load error detected'
-            exit 1
-          fi
-          echo "SUNNET_LOAD_TEST_OK (server exit code: $code)"
+          test "$ok" -eq 1
+          grep -F 'Loading Minecraft 1.21.1 with Fabric Loader 0.16.10' server.log
+          grep -F -- '- sunnet 26.3' server.log
+          grep -F -- '- geckolib 4.6.5' server.log
+          grep -F -- '- fabric-api 0.116.3+1.21.1' server.log
+          grep -F 'Done (' server.log
+          if grep -E 'Could not execute entrypoint|EntrypointException|NoClassDefFoundError|NoSuchMethodError|Mixin apply failed|Exception in server tick loop' server.log; then exit 1; fi
+          echo SUNNET_EXACT_JAR_LOAD_TEST_OK
       - uses: actions/upload-artifact@v4
         if: always()
         with:
