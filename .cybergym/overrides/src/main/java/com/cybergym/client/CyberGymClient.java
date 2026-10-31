@@ -35,16 +35,18 @@ public final class CyberGymClient implements ClientModInitializer {
     private static final ModuleManager MODULES = new ModuleManager();
     private static final Settings SETTINGS = new Settings();
     private static final CpsTracker CLICKS = new CpsTracker();
+    private static final AntiCheatGuard GUARD = new AntiCheatGuard();
     private static ConfigStore config;
     private KeyBinding guiKey, swordKey, bowKey, totemKey, appleKey, pickKey;
     private boolean shiftWasHeld, mouseWasHeld;
-    private long nextAttackNs, lastFailureNoticeNs, lastAttackTick = -1, ticks;
+    private long lastFailureNoticeNs, ticks;
     private long lastUserInputTick;
     private boolean disconnectedForHealth;
 
     public static ModuleManager modules() { return MODULES; }
     public static Settings settings() { return SETTINGS; }
     public static CpsTracker clicks() { return CLICKS; }
+    public static AntiCheatGuard guard() { return GUARD; }
     public static ConfigStore config() { return config; }
 
     @Override public void onInitializeClient() {
@@ -169,9 +171,12 @@ public final class CyberGymClient implements ClientModInitializer {
         if (mc.currentScreen == null && mc.player != null && physicalClick && !mouseWasHeld)
             CLICKS.click(System.currentTimeMillis());
         mouseWasHeld = physicalClick;
-        if (mc.currentScreen != null || mc.player == null || mc.world == null || mc.interactionManager == null)
+        if (mc.currentScreen != null || mc.player == null || mc.world == null || mc.interactionManager == null) {
+            GUARD.resetTransient();
             return;
+        }
         ticks++;
+        GUARD.trackView(mc, ticks);
         if (sword && MODULES.enabled(Module.QUICK_SWORD)) equipHotbar(mc, stack -> stack.isIn(ItemTags.SWORDS));
         if (bow && MODULES.enabled(Module.QUICK_BOW)) equipHotbar(mc,
             stack -> stack.getItem() instanceof BowItem || stack.getItem() instanceof CrossbowItem);
@@ -194,13 +199,10 @@ public final class CyberGymClient implements ClientModInitializer {
         if (!(MODULES.enabled(Module.TRIGGER_BOT)
             || MODULES.enabled(Module.KILL_AURA)
             || (MODULES.enabled(Module.AUTO_CLICKER) && mc.options.attackKey.isPressed()))) return;
-        if (SETTINGS.respectCooldown && mc.player.getAttackCooldownProgress(0.0f) < 0.95f) return;
-        long now = System.nanoTime();
-        if (now < nextAttackNs || lastAttackTick == ticks) return;
+        if (!GUARD.permitAutomatedAttack(mc, target, SETTINGS, ticks, System.nanoTime(),
+            MODULES.enabled(Module.ANTICHEAT_GUARD))) return;
         mc.interactionManager.attackEntity(mc.player, target);
         mc.player.swingHand(Hand.MAIN_HAND);
-        lastAttackTick = ticks;
-        nextAttackNs = now + 1_000_000_000L / SETTINGS.maxCps;
     }
     private static void equipHotbar(MinecraftClient mc, Predicate<net.minecraft.item.ItemStack> accepts) {
         for (int i = 0; i < 9; i++) {
@@ -242,9 +244,12 @@ public final class CyberGymClient implements ClientModInitializer {
             Math.sqrt(delta.x * delta.x + delta.z * delta.z)));
         double yawError = TargetingRules.wrappedAngle(yaw - mc.player.getYaw());
         double pitchError = pitch - mc.player.getPitch();
+        double stepCap = MODULES.enabled(Module.ANTICHEAT_GUARD)
+            ? AntiCheatGuard.maximumRotation(SETTINGS.guardPreset, SETTINGS.aimDegreesPerTick)
+            : SETTINGS.aimDegreesPerTick;
         mc.player.setYaw(mc.player.getYaw() + (float)TargetingRules.smoothStep(
-            yawError, SETTINGS.aimDegreesPerTick, SETTINGS.aimCurve));
+            yawError, stepCap, SETTINGS.aimCurve));
         mc.player.setPitch(MathHelper.clamp(mc.player.getPitch() + (float)TargetingRules.smoothStep(
-            pitchError, SETTINGS.aimDegreesPerTick, SETTINGS.aimCurve), -90f, 90f));
+            pitchError, stepCap, SETTINGS.aimCurve), -90f, 90f));
     }
 }
