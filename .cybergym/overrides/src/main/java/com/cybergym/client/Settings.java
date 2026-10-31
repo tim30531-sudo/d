@@ -5,6 +5,8 @@ import java.util.Properties;
 /** Local, validated settings. No networking, hidden telemetry or spoofing. */
 public final class Settings {
     public enum AimCurve { LINEAR, QUADRATIC, BEZIER }
+    /** These are local training restrictions, not claimed anti-cheat bypasses. */
+    public enum GuardPreset { STRICT, BALANCED, PRACTICE }
     public int maxCps = 7;
     public double aimDegreesPerTick = 2.0;
     public int aimFovDegrees = 18;
@@ -14,6 +16,7 @@ public final class Settings {
     public int overlayX = 8;
     public int overlayY = 8;
     public AimCurve aimCurve = AimCurve.LINEAR;
+    public GuardPreset guardPreset = GuardPreset.STRICT;
     public int radarRadius = 40;
     public int radarSize = 90;
     public int lowHealthHearts = 3;
@@ -23,6 +26,7 @@ public final class Settings {
         maxCps = 7; aimDegreesPerTick = 2.0; aimFovDegrees = 18;
         maxTargetRange = 3.0; respectCooldown = true; trainerGoalCps = 7;
         overlayX = 8; overlayY = 8; aimCurve = AimCurve.LINEAR;
+        guardPreset = GuardPreset.STRICT;
         radarRadius = 40; radarSize = 90; lowHealthHearts = 3; entityBudget = 32;
     }
     public void normalize() {
@@ -38,6 +42,7 @@ public final class Settings {
         lowHealthHearts = clamp(lowHealthHearts, 1, 10);
         entityBudget = clamp(entityBudget, 4, 64);
         if (aimCurve == null) aimCurve = AimCurve.LINEAR;
+        if (guardPreset == null) guardPreset = GuardPreset.STRICT;
     }
     public Properties toProperties(ModuleManager modules) {
         normalize();
@@ -52,6 +57,7 @@ public final class Settings {
         out.setProperty("overlayX", Integer.toString(overlayX));
         out.setProperty("overlayY", Integer.toString(overlayY));
         out.setProperty("aimCurve", aimCurve.name());
+        out.setProperty("guardPreset", guardPreset.name());
         out.setProperty("radarRadius", Integer.toString(radarRadius));
         out.setProperty("radarSize", Integer.toString(radarSize));
         out.setProperty("lowHealthHearts", Integer.toString(lowHealthHearts));
@@ -77,6 +83,8 @@ public final class Settings {
         radarSize = integer(values, "radarSize", radarSize);
         lowHealthHearts = integer(values, "lowHealthHearts", lowHealthHearts);
         entityBudget = integer(values, "entityBudget", entityBudget);
+        try { guardPreset = GuardPreset.valueOf(values.getProperty("guardPreset", "STRICT")); }
+        catch (IllegalArgumentException ex) { guardPreset = GuardPreset.STRICT; }
         try { aimCurve = AimCurve.valueOf(values.getProperty("aimCurve", "LINEAR")); }
         catch (IllegalArgumentException ex) { aimCurve = AimCurve.LINEAR; }
         normalize();
