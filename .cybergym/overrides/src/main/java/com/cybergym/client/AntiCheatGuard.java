@@ -3,6 +3,7 @@ package com.cybergym.client;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.math.Vec3d;
 import java.util.UUID;
 
 /**
@@ -14,7 +15,8 @@ import java.util.UUID;
 public final class AntiCheatGuard {
     public enum Rejection {
         NONE, NO_WORLD, MENU, WRONG_CROSSHAIR, INVALID_TARGET, COOLDOWN,
-        RATE_LIMIT, TARGET_UNSTABLE, AIM_SNAP, USING_ITEM
+        RATE_LIMIT, TARGET_UNSTABLE, AIM_SNAP, USING_ITEM,
+        RECENT_USE, POSSIBLE_TELEPORT
     }
     private long attacksAllowed;
     private long attacksBlocked;
@@ -28,6 +30,40 @@ public final class AntiCheatGuard {
     private long previousYawTick = -1;
     private float recentRotation;
     private long lastRecordedAttackTick = -1;
+    private Object observedWorld;
+    private Vec3d lastPosition;
+    private long lastPositionTick = -1;
+    private long lastItemUseTick = -1;
+    private long pauseUntilTick = -1;
+
+    /** Public for dependency-free boundary tests; events use client-tick integers. */
+    public static boolean withinGraceTicks(long currentTick, long eventTick, int graceTicks) {
+        return eventTick >= 0 && graceTicks > 0
+            && currentTick >= eventTick && currentTick - eventTick <= graceTicks;
+    }
+
+    /**
+     * Records nearby client events that can invalidate automated attacks.
+     * A large position jump is treated as a possible teleport, NOT proof of
+     * an anti-cheat correction. No packet interception occurs.
+     */
+    public void observePlayerContext(MinecraftClient mc, long tick, Settings settings) {
+        if (mc == null || mc.player == null || mc.world == null) {
+            resetTransient();
+            return;
+        }
+        Vec3d position = mc.player.getPos();
+        if (observedWorld != mc.world) {
+            observedWorld = mc.world;
+            pauseUntilTick = tick + settings.correctionPauseTicks;
+        } else if (lastPosition != null && lastPositionTick == tick - 1
+                && position.squaredDistanceTo(lastPosition) > 36.0) {
+            pauseUntilTick = tick + settings.correctionPauseTicks;
+        }
+        lastPosition = position;
+        lastPositionTick = tick;
+        if (mc.options.useKey.isPressed() || mc.player.isUsingItem()) lastItemUseTick = tick;
+    }
 
     public long attacksAllowed() { return attacksAllowed; }
     public long attacksBlocked() { return attacksBlocked; }
@@ -98,7 +134,12 @@ public final class AntiCheatGuard {
         if (!TargetingRules.eligible(target != mc.player, target.isAlive(), target.isSpectator(),
             mc.player.canSee(target), mc.player.squaredDistanceTo(target),
             maximumAttackRange(preset, settings.maxTargetRange))) return reject(Rejection.INVALID_TARGET);
-        if (mc.player.isSpectator() || mc.player.isUsingItem()) return reject(Rejection.USING_ITEM);
+        if (mc.player.isSpectator() || mc.player.isUsingItem()
+            || mc.options.useKey.isPressed()) return reject(Rejection.USING_ITEM);
+        if (guardEnabled && tick < pauseUntilTick)
+            return reject(Rejection.POSSIBLE_TELEPORT);
+        if (guardEnabled && withinGraceTicks(tick, lastItemUseTick, settings.postUseDelayTicks))
+            return reject(Rejection.RECENT_USE);
         if (settings.respectCooldown
             && mc.player.getAttackCooldownProgress(0.0f) < (preset == Settings.GuardPreset.STRICT ? 0.99f : 0.95f))
             return reject(Rejection.COOLDOWN);
@@ -130,5 +171,10 @@ public final class AntiCheatGuard {
         lastTrackedTick = -1;
         previousYawTick = -1;
         recentRotation = 0;
+        observedWorld = null;
+        lastPosition = null;
+        lastPositionTick = -1;
+        lastItemUseTick = -1;
+        pauseUntilTick = -1;
     }
 }
