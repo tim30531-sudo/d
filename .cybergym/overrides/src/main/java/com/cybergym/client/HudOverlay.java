@@ -68,7 +68,7 @@ public final class HudOverlay {
         if (m.enabled(Module.ANTICHEAT_GUARD)) {
             AntiCheatGuard guard = CyberGymClient.guard();
             line(dc, mc, x, y, "AC guard: " + s.guardPreset.name() +
-                " | denied: " + guard.attacksBlocked());
+                " | locally held: " + guard.attacksBlocked());
             y += 16;
         }
         if (m.enabled(Module.CPS_HUD)) {
