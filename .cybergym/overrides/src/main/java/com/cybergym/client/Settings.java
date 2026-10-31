@@ -21,6 +21,9 @@ public final class Settings {
     public int radarSize = 90;
     public int lowHealthHearts = 3;
     public int entityBudget = 32;
+    public int postUseDelayTicks = 5;
+    public int correctionPauseTicks = 16;
+    public boolean auraRequiresHeldAttack = true;
 
     public void reset() {
         maxCps = 7; aimDegreesPerTick = 2.0; aimFovDegrees = 18;
@@ -28,6 +31,7 @@ public final class Settings {
         overlayX = 8; overlayY = 8; aimCurve = AimCurve.LINEAR;
         guardPreset = GuardPreset.STRICT;
         radarRadius = 40; radarSize = 90; lowHealthHearts = 3; entityBudget = 32;
+        postUseDelayTicks = 5; correctionPauseTicks = 16; auraRequiresHeldAttack = true;
     }
     public void normalize() {
         maxCps = clamp(maxCps, 1, 12);
@@ -41,6 +45,8 @@ public final class Settings {
         radarSize = clamp(radarSize, 50, 140);
         lowHealthHearts = clamp(lowHealthHearts, 1, 10);
         entityBudget = clamp(entityBudget, 4, 64);
+        postUseDelayTicks = clamp(postUseDelayTicks, 0, 12);
+        correctionPauseTicks = clamp(correctionPauseTicks, 0, 60);
         if (aimCurve == null) aimCurve = AimCurve.LINEAR;
         if (guardPreset == null) guardPreset = GuardPreset.STRICT;
     }
@@ -62,6 +68,9 @@ public final class Settings {
         out.setProperty("radarSize", Integer.toString(radarSize));
         out.setProperty("lowHealthHearts", Integer.toString(lowHealthHearts));
         out.setProperty("entityBudget", Integer.toString(entityBudget));
+        out.setProperty("postUseDelayTicks", Integer.toString(postUseDelayTicks));
+        out.setProperty("correctionPauseTicks", Integer.toString(correctionPauseTicks));
+        out.setProperty("auraRequiresHeldAttack", Boolean.toString(auraRequiresHeldAttack));
         return out;
     }
     public void read(Properties values, ModuleManager modules) {
@@ -83,6 +92,9 @@ public final class Settings {
         radarSize = integer(values, "radarSize", radarSize);
         lowHealthHearts = integer(values, "lowHealthHearts", lowHealthHearts);
         entityBudget = integer(values, "entityBudget", entityBudget);
+        postUseDelayTicks = integer(values, "postUseDelayTicks", postUseDelayTicks);
+        correctionPauseTicks = integer(values, "correctionPauseTicks", correctionPauseTicks);
+        auraRequiresHeldAttack = booleanValue(values, "auraRequiresHeldAttack", auraRequiresHeldAttack);
         try { guardPreset = GuardPreset.valueOf(values.getProperty("guardPreset", "STRICT")); }
         catch (IllegalArgumentException ex) { guardPreset = GuardPreset.STRICT; }
         try { aimCurve = AimCurve.valueOf(values.getProperty("aimCurve", "LINEAR")); }
