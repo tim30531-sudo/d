@@ -96,7 +96,11 @@ public final class ClickGuiScreen extends Screen {
             new Option("Low HP alert (hearts)", () -> "" + s.lowHealthHearts,
                 () -> s.lowHealthHearts--, () -> s.lowHealthHearts++),
             new Option("Entities per overlay", () -> "" + s.entityBudget,
-                () -> s.entityBudget -= 4, () -> s.entityBudget += 4)
+                () -> s.entityBudget -= 4, () -> s.entityBudget += 4),
+            new Option("Use-to-attack delay (ticks)", () -> "" + s.postUseDelayTicks,
+                () -> s.postUseDelayTicks--, () -> s.postUseDelayTicks++),
+            new Option("Position-jump pause (ticks)", () -> "" + s.correctionPauseTicks,
+                () -> s.correctionPauseTicks -= 2, () -> s.correctionPauseTicks += 2)
         );
     }
     private void showSettings() {
@@ -111,6 +115,11 @@ public final class ClickGuiScreen extends Screen {
         }
         Settings s = CyberGymClient.settings();
         int foot = y0 + h - 104;
+        make("Aura requires held attack: " + (s.auraRequiresHeldAttack ? "ON" : "OFF"),
+            x0 + 8, foot - 55, w - 16, 20, () -> {
+                s.auraRequiresHeldAttack = !s.auraRequiresHeldAttack;
+                CyberGymClient.saveSettings(); refresh();
+            });
         make("AC guard profile: " + s.guardPreset.name(),
             x0 + 8, foot - 28, w - 16, 20, () -> {
                 Settings.GuardPreset[] values = Settings.GuardPreset.values();
@@ -178,7 +187,7 @@ public final class ClickGuiScreen extends Screen {
         renderBackground(dc, mouseX, mouseY, delta);
         dc.fill(x0, y0, x0 + w, y0 + h, BG);
         dc.fill(x0, y0, x0 + w, y0 + 3, ACCENT);
-        dc.drawTextWithShadow(textRenderer, "CYBERGYM PvP  |  1.21.11  |  v0.8",
+        dc.drawTextWithShadow(textRenderer, "CYBERGYM PvP  |  1.21.11  |  v0.9",
             x0 + 10, y0 + 9, ACCENT);
         if (page == Page.SETTINGS) {
             List<Option> all = options();
