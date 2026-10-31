@@ -65,7 +65,7 @@ public final class CyberGymClient implements ClientModInitializer {
         pickKey = bind("pickaxe", GLFW.GLFW_KEY_J);
         ClientTickEvents.END_CLIENT_TICK.register(this::safeTick);
         HudElementRegistry.addLast(Identifier.of("cybergym_pvp", "hud"), HudOverlay::render);
-        System.out.println("[CyberGym] v0.8 loaded with AC practice guard. Right Shift opens ClickGUI.");
+        System.out.println("[CyberGym] v0.9 loaded with post-action and teleport safety. Right Shift opens ClickGUI.");
     }
     private static KeyBinding bind(String id, int key) {
         return KeyBindingHelper.registerKeyBinding(new KeyBinding(
@@ -177,6 +177,7 @@ public final class CyberGymClient implements ClientModInitializer {
         }
         ticks++;
         GUARD.trackView(mc, ticks);
+        GUARD.observePlayerContext(mc, ticks, SETTINGS);
         if (sword && MODULES.enabled(Module.QUICK_SWORD)) equipHotbar(mc, stack -> stack.isIn(ItemTags.SWORDS));
         if (bow && MODULES.enabled(Module.QUICK_BOW)) equipHotbar(mc,
             stack -> stack.getItem() instanceof BowItem || stack.getItem() instanceof CrossbowItem);
@@ -192,12 +193,14 @@ public final class CyberGymClient implements ClientModInitializer {
         MODULES.update(mc);
         // Any action after auto-leave returns immediately; the world may be unloaded.
         if (mc.player == null || mc.world == null || mc.currentScreen != null) return;
+        boolean auraArmed = MODULES.enabled(Module.KILL_AURA)
+            && (!SETTINGS.auraRequiresHeldAttack || mc.options.attackKey.isPressed());
         if ((MODULES.enabled(Module.AIM_ASSIST) && mc.options.attackKey.isPressed())
-            || MODULES.enabled(Module.KILL_AURA)) smoothAim(mc);
+            || auraArmed) smoothAim(mc);
         PlayerEntity target = crosshairPlayer(mc);
         if (target == null) return;
         if (!(MODULES.enabled(Module.TRIGGER_BOT)
-            || MODULES.enabled(Module.KILL_AURA)
+            || auraArmed
             || (MODULES.enabled(Module.AUTO_CLICKER) && mc.options.attackKey.isPressed()))) return;
         if (!GUARD.permitAutomatedAttack(mc, target, SETTINGS, ticks, System.nanoTime(),
             MODULES.enabled(Module.ANTICHEAT_GUARD))) return;
