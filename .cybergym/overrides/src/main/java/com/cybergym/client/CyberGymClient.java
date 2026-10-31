@@ -65,7 +65,7 @@ public final class CyberGymClient implements ClientModInitializer {
         pickKey = bind("pickaxe", GLFW.GLFW_KEY_J);
         ClientTickEvents.END_CLIENT_TICK.register(this::safeTick);
         HudElementRegistry.addLast(Identifier.of("cybergym_pvp", "hud"), HudOverlay::render);
-        System.out.println("[CyberGym] v0.7 loaded, Right Shift opens ClickGUI.");
+        System.out.println("[CyberGym] v0.8 loaded with AC practice guard. Right Shift opens ClickGUI.");
     }
     private static KeyBinding bind(String id, int key) {
         return KeyBindingHelper.registerKeyBinding(new KeyBinding(
