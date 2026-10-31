@@ -101,7 +101,7 @@ public final class ClickGuiScreen extends Screen {
     }
     private void showSettings() {
         List<Option> all = options();
-        int count = Math.max(2, (h - 155) / ROW_H);
+        int count = Math.max(2, (h - 211) / ROW_H);
         offset = Math.min(offset, Math.max(0, all.size() - count));
         for (int i = offset; i < Math.min(all.size(), offset + count); i++) {
             Option opt = all.get(i);
@@ -111,6 +111,12 @@ public final class ClickGuiScreen extends Screen {
         }
         Settings s = CyberGymClient.settings();
         int foot = y0 + h - 104;
+        make("AC guard profile: " + s.guardPreset.name(),
+            x0 + 8, foot - 28, w - 16, 20, () -> {
+                Settings.GuardPreset[] values = Settings.GuardPreset.values();
+                s.guardPreset = values[(s.guardPreset.ordinal() + 1) % values.length];
+                CyberGymClient.saveSettings(); refresh();
+            });
         make("Aim: " + s.aimCurve.name(), x0 + 8, foot, (w - 24) / 2, 20, () -> {
             Settings.AimCurve[] values = Settings.AimCurve.values();
             s.aimCurve = values[(s.aimCurve.ordinal() + 1) % values.length];
@@ -176,7 +182,7 @@ public final class ClickGuiScreen extends Screen {
             x0 + 10, y0 + 9, ACCENT);
         if (page == Page.SETTINGS) {
             List<Option> all = options();
-            int count = Math.max(2, (h - 155) / ROW_H);
+            int count = Math.max(2, (h - 211) / ROW_H);
             for (int i = offset; i < Math.min(offset + count, all.size()); i++) {
                 Option opt = all.get(i);
                 dc.drawTextWithShadow(textRenderer, opt.title + ": " + opt.value.get(),
