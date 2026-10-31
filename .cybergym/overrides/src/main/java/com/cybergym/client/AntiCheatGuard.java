@@ -52,7 +52,7 @@ public final class AntiCheatGuard {
             resetTransient();
             return;
         }
-        Vec3d position = mc.player.getPos();
+        Vec3d position = new Vec3d(mc.player.getX(), mc.player.getY(), mc.player.getZ());
         if (observedWorld != mc.world) {
             observedWorld = mc.world;
             pauseUntilTick = tick + settings.correctionPauseTicks;
