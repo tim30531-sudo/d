@@ -65,6 +65,12 @@ public final class HudOverlay {
         Settings s = CyberGymClient.settings();
         int x = Math.min(s.overlayX, Math.max(0, dc.getScaledWindowWidth() - 240));
         int y = Math.min(s.overlayY, Math.max(0, dc.getScaledWindowHeight() - 125));
+        if (m.enabled(Module.ANTICHEAT_GUARD)) {
+            AntiCheatGuard guard = CyberGymClient.guard();
+            line(dc, mc, x, y, "AC guard: " + s.guardPreset.name() +
+                " | denied: " + guard.attacksBlocked());
+            y += 16;
+        }
         if (m.enabled(Module.CPS_HUD)) {
             line(dc, mc, x, y, "CPS (sampled): " + CyberGymClient.clicks().cps(System.currentTimeMillis())); y += 16;
         }
