@@ -32,6 +32,7 @@ public enum Module {
     DIRECTION_TRACERS("Direction tracers", "Visual", false, "2D screen-space directional lines to visible targets"),
     NAME_TAGS_HUD("Nearby name tags", "Visual", false, "Nearby entities and available health in HUD"),
     LOW_HEALTH_HUD("Low health alert", "Utility", true, "Visual warning when below configured hearts"),
+    ANTICHEAT_GUARD("AC practice guard", "Utility", true, "Vanilla-compatible limits; no bypass or packet edits"),
     AUTO_LEAVE("Low health disconnect", "Utility", false, "Disconnect when health <= selected threshold");
 
     public final String title;
