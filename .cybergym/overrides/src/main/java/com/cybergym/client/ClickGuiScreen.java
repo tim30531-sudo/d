@@ -178,7 +178,7 @@ public final class ClickGuiScreen extends Screen {
         renderBackground(dc, mouseX, mouseY, delta);
         dc.fill(x0, y0, x0 + w, y0 + h, BG);
         dc.fill(x0, y0, x0 + w, y0 + 3, ACCENT);
-        dc.drawTextWithShadow(textRenderer, "CYBERGYM PvP  |  1.21.11  |  v0.7",
+        dc.drawTextWithShadow(textRenderer, "CYBERGYM PvP  |  1.21.11  |  v0.8",
             x0 + 10, y0 + 9, ACCENT);
         if (page == Page.SETTINGS) {
             List<Option> all = options();
