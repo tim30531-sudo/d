@@ -28,6 +28,7 @@ public final class CoreSelfTest {
         corrupt.setProperty("entityBudget", "99999");
         corrupt.setProperty("lowHealthHearts", "garbage");
         corrupt.setProperty("aimCurve", "FAKE");
+        corrupt.setProperty("guardPreset", "INVALID");
         corrupt.setProperty("module.AUTO_CLICKER", "garbage");
         settings.read(corrupt, modules);
         check(settings.maxCps == 12, "CPS upper bound");
@@ -38,6 +39,7 @@ public final class CoreSelfTest {
         check(settings.entityBudget == 64, "Radar entity budget clamped");
         check(settings.lowHealthHearts == 3, "Bad health threshold fallback");
         check(settings.aimCurve == Settings.AimCurve.LINEAR, "Bad aim mode fallback");
+        check(settings.guardPreset == Settings.GuardPreset.STRICT, "Unknown guard preset falls back to strict");
         check(!modules.enabled(Module.AUTO_CLICKER), "Invalid state must not enable attacks");
         check(!TargetingRules.eligible(true,true,false,false,4,3), "Occluded target blocked");
         check(!TargetingRules.eligible(true,true,true,true,4,3), "Spectator blocked");
@@ -65,18 +67,40 @@ public final class CoreSelfTest {
         Path temp = Files.createTempDirectory("cybergym-test-");
         ConfigStore store = new ConfigStore(temp, modules, settings);
         settings.maxCps = 9; settings.aimCurve = Settings.AimCurve.BEZIER;
+        settings.guardPreset = Settings.GuardPreset.BALANCED;
         settings.radarRadius = 72; modules.set(Module.PLAYER_RADAR, true);
         store.saveAs("practice-1");
         settings.maxCps = 2; settings.aimCurve = Settings.AimCurve.LINEAR;
+        settings.guardPreset = Settings.GuardPreset.PRACTICE;
         modules.set(Module.PLAYER_RADAR, false);
         store.loadProfile("practice-1");
         check(settings.maxCps == 9 && modules.enabled(Module.PLAYER_RADAR), "Profile save/load");
         check(settings.aimCurve == Settings.AimCurve.BEZIER, "Curve persists");
+        check(settings.guardPreset == Settings.GuardPreset.BALANCED, "Guard preset persists");
         check(settings.radarRadius == 72, "Radar radius persists");
         ConfigStore fresh = new ConfigStore(temp, modules, settings);
         fresh.load();
         check(fresh.activeName().equals("practice-1"), "Active profile persists");
         check(fresh.profiles().contains("practice-1"), "Profile list");
-        System.out.println("CyberGym v0.7 core self-test PASSED (" + assertions + " assertions)");
+        check(modules.enabled(Module.ANTICHEAT_GUARD), "Guard defaults enabled");
+        check(AntiCheatGuard.minimumIntervalNanos(Settings.GuardPreset.STRICT, 12) >= 170_000_000L,
+            "Strict rate floor");
+        check(AntiCheatGuard.minimumIntervalNanos(Settings.GuardPreset.BALANCED, 12) >= 120_000_000L,
+            "Balanced rate floor");
+        check(AntiCheatGuard.minimumIntervalNanos(Settings.GuardPreset.PRACTICE, 10) == 100_000_000L,
+            "Practice user CPS interval");
+        check(AntiCheatGuard.maximumAttackRange(Settings.GuardPreset.STRICT, 8.0) == 2.85,
+            "Strict reach cap");
+        check(AntiCheatGuard.maximumAttackRange(Settings.GuardPreset.PRACTICE, 8.0) == 3.0,
+            "Vanilla max reach");
+        check(AntiCheatGuard.maximumRotation(Settings.GuardPreset.STRICT, 6.0) == 1.8,
+            "Strict aim rotation cap");
+        check(AntiCheatGuard.maximumRotation(Settings.GuardPreset.BALANCED, 6.0) == 3.0,
+            "Balanced aim rotation cap");
+        check(AntiCheatGuard.maximumRotation(Settings.GuardPreset.PRACTICE, 6.0) == 5.0,
+            "Practice aim rotation cap");
+        check(AntiCheatGuard.maximumRotation(Settings.GuardPreset.STRICT, Double.NaN) == 0.0,
+            "Reject invalid rotation");
+        System.out.println("CyberGym v0.8 core self-test PASSED (" + assertions + " assertions)");
     }
 }
