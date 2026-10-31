@@ -29,6 +29,9 @@ public final class CoreSelfTest {
         corrupt.setProperty("lowHealthHearts", "garbage");
         corrupt.setProperty("aimCurve", "FAKE");
         corrupt.setProperty("guardPreset", "INVALID");
+        corrupt.setProperty("postUseDelayTicks", "-20");
+        corrupt.setProperty("correctionPauseTicks", "1500");
+        corrupt.setProperty("auraRequiresHeldAttack", "notBoolean");
         corrupt.setProperty("module.AUTO_CLICKER", "garbage");
         settings.read(corrupt, modules);
         check(settings.maxCps == 12, "CPS upper bound");
@@ -40,6 +43,9 @@ public final class CoreSelfTest {
         check(settings.lowHealthHearts == 3, "Bad health threshold fallback");
         check(settings.aimCurve == Settings.AimCurve.LINEAR, "Bad aim mode fallback");
         check(settings.guardPreset == Settings.GuardPreset.STRICT, "Unknown guard preset falls back to strict");
+        check(settings.postUseDelayTicks == 0, "Post-use tick minimum");
+        check(settings.correctionPauseTicks == 60, "Correction pause maximum");
+        check(settings.auraRequiresHeldAttack, "Invalid physical input setting defaults to true");
         check(!modules.enabled(Module.AUTO_CLICKER), "Invalid state must not enable attacks");
         check(!TargetingRules.eligible(true,true,false,false,4,3), "Occluded target blocked");
         check(!TargetingRules.eligible(true,true,true,true,4,3), "Spectator blocked");
@@ -68,15 +74,22 @@ public final class CoreSelfTest {
         ConfigStore store = new ConfigStore(temp, modules, settings);
         settings.maxCps = 9; settings.aimCurve = Settings.AimCurve.BEZIER;
         settings.guardPreset = Settings.GuardPreset.BALANCED;
+        settings.postUseDelayTicks = 6; settings.correctionPauseTicks = 24;
+        settings.auraRequiresHeldAttack = false;
         settings.radarRadius = 72; modules.set(Module.PLAYER_RADAR, true);
         store.saveAs("practice-1");
         settings.maxCps = 2; settings.aimCurve = Settings.AimCurve.LINEAR;
         settings.guardPreset = Settings.GuardPreset.PRACTICE;
+        settings.postUseDelayTicks = 1; settings.correctionPauseTicks = 0;
+        settings.auraRequiresHeldAttack = true;
         modules.set(Module.PLAYER_RADAR, false);
         store.loadProfile("practice-1");
         check(settings.maxCps == 9 && modules.enabled(Module.PLAYER_RADAR), "Profile save/load");
         check(settings.aimCurve == Settings.AimCurve.BEZIER, "Curve persists");
         check(settings.guardPreset == Settings.GuardPreset.BALANCED, "Guard preset persists");
+        check(settings.postUseDelayTicks == 6, "Post-use delay persists");
+        check(settings.correctionPauseTicks == 24, "Teleport pause persists");
+        check(!settings.auraRequiresHeldAttack, "Manual activation setting persists");
         check(settings.radarRadius == 72, "Radar radius persists");
         ConfigStore fresh = new ConfigStore(temp, modules, settings);
         fresh.load();
@@ -101,6 +114,12 @@ public final class CoreSelfTest {
             "Practice aim rotation cap");
         check(AntiCheatGuard.maximumRotation(Settings.GuardPreset.STRICT, Double.NaN) == 0.0,
             "Reject invalid rotation");
-        System.out.println("CyberGym v0.8 core self-test PASSED (" + assertions + " assertions)");
+        check(!AntiCheatGuard.withinGraceTicks(100, -1, 5), "Unset timestamp not in grace");
+        check(AntiCheatGuard.withinGraceTicks(104, 100, 5), "Use gap holds four ticks later");
+        check(AntiCheatGuard.withinGraceTicks(105, 100, 5), "Use gap inclusive boundary");
+        check(!AntiCheatGuard.withinGraceTicks(106, 100, 5), "Use gap expires");
+        check(!AntiCheatGuard.withinGraceTicks(99, 100, 5), "Ignore future events");
+        check(!AntiCheatGuard.withinGraceTicks(100, 100, 0), "Disabling gap works");
+        System.out.println("CyberGym v0.9 core self-test PASSED (" + assertions + " assertions)");
     }
 }
