@@ -1,0 +1,48 @@
+name: Build CyberGym PvP v0.7 (remapped JAR)
+on:
+  push:
+    branches: [cybergym-pvp-v0.7]
+    paths:
+      - '.cybergym/overrides/**'
+      - '.github/workflows/cybergym-v07-build.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Extract baseline source and apply v0.7 overrides
+        run: |
+          mkdir -p cybergym
+          base64 -d .cybergym/source.tar.xz.b64 | tar -xJ -C cybergym
+          cp -a .cybergym/overrides/. cybergym/
+          sed -i 's/mod_version=0.6.0-dev/mod_version=0.7.0/' cybergym/gradle.properties
+      - name: Compile, remap and run core tests
+        run: gradle --no-daemon --console plain -p cybergym clean build testCore
+      - name: Inspect production JAR
+        run: |
+          test -s cybergym/build/libs/cybergym-pvp-0.7.0.jar
+          unzip -l cybergym/build/libs/cybergym-pvp-0.7.0.jar | grep -F fabric.mod.json
+          unzip -l cybergym/build/libs/cybergym-pvp-0.7.0.jar | grep -F CyberGymClient.class
+          unzip -l cybergym/build/libs/cybergym-pvp-0.7.0.jar | grep -F ClickGuiScreen.class
+      - name: Publish single JAR to branch
+        run: |
+          mkdir -p .cybergym/dist
+          cp cybergym/build/libs/cybergym-pvp-0.7.0.jar .cybergym/dist/CyberGym-PvP-Fabric-1.21.11-v0.7.0.jar
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .cybergym/dist/CyberGym-PvP-Fabric-1.21.11-v0.7.0.jar
+          git commit -m 'Publish remapped CyberGym PvP v0.7 JAR' || exit 0
+          git push
